@@ -1,0 +1,29 @@
+#!/bin/bash
+sql="sqlite3 ./db/QCdata.db"
+keyx=$(echo -n "$REMOTE_ADDR|$(cat /proc/net/arp | grep $REMOTE_ADDR | awk '{print $4}' | tr "[a-z]" "A-Z")|obeng" | md5sum | cut -c5-25)
+eval $(echo "$QUERY_STRING" | awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+read QUERY_STRING
+eval $(echo "$QUERY_STRING"|awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+case $act in
+	login)
+		testval=$($sql "select count(username) from user where username='$username' and password='$(echo -n "$password" | md5sum | cut -c5-30)'")
+		if  [ "$testval" == "1" ];then
+			> /tmp/$keyx
+		fi
+	;;
+	logout)
+		rm -f /tmp/$keyx
+	;;
+esac
+
+if [ -f /tmp/$keyx ];then
+	. ./config/head
+	. ./config/top
+	. ./config/left
+	. ./config/content $act
+	. ./config/foot
+else
+	. ./config/head
+	. ./config/login
+	. ./config/foot
+fi

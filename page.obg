@@ -1,0 +1,252 @@
+#!/bin/bash
+_rs="<br />"
+keyx=$(echo -n "$REMOTE_ADDR|$(cat /proc/net/arp | grep $REMOTE_ADDR | awk '{print $4}' | tr "[a-z]" "A-Z")|obeng" | md5sum | cut -c5-25)
+if [ -f /tmp/$keyx ];then
+sql="sqlite3 ./db/QCdata.db"
+sql2="sqlite3 -html ./db/QCdata.db"
+
+_st () {
+	echo "$1" | tr "+" " " | sed -f ./shtml
+}
+
+eval $(echo "$QUERY_STRING" | awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+read QUERY_STRING
+eval $(echo "$QUERY_STRING"|awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+if [ "$u" == "in" ];then
+case "$m" in
+	partai)
+		if [ "$kode" != "" ] && [ "$nama" != "" ]&& [ "$deskrip" != "" ];then
+		 	$sql "insert into $m Values ('$(_st $(echo "$kode" | tr 'a-z' 'A-Z'))','$(_st $nama)','$(_st $deskrip)')" 
+			if [ "$?" -eq "0" ];then
+				_rs="<center><font color=green><strong>Sukses!</strong></font></center>"		
+			else
+				_rs="<center><font color=red><strong>Gagal!</strong></font></center>"
+			fi
+		else
+				_rs="<center><font color=red><strong>Gagal! , semua field harus terisi</strong></font></center>"
+		fi
+	;;
+	caleg)
+		if [ "$kp" != "" ] && [ "$nama" != "" ]&& [ "$nocl" != "" ];then
+		 	$sql "insert into $m Values ('$(_st $kp)','$(_st $nocl)','$(_st $nama)')" 
+			if [ "$?" -eq "0" ];then
+				_rs="<center><font color=green><strong>Sukses!</strong></font></center>"		
+			else
+				_rs="<center><font color=red><strong>Gagal!</strong></font></center>"
+			fi
+		else
+				_rs="<center><font color=red><strong>Gagal! , semua field harus terisi</strong></font></center>"
+		fi
+	;;
+	desa)
+		if [ "$kode" != "" ] && [ "$deskrip" != "" ];then
+		 	$sql "insert into $m Values ('$(_st $(echo "$kode" | tr 'a-z' 'A-Z'))','$(_st $deskrip)')" 
+			if [ "$?" -eq "0" ];then
+				_rs="<center><font color=green><strong>Sukses!</strong></font></center>"		
+			else
+				_rs="<center><font color=red><strong>Gagal!</strong></font></center>"
+			fi
+		else
+				_rs="<center><font color=red><strong>Gagal! , semua field harus terisi</strong></font></center>"
+		fi
+	;;
+	member)
+		if [ "$nP" != "" ] && [ "$nama" != "" ] && [ "$alamat" != "" ] && [ "$status" != "" ] && [ "$pin" != "" ];then
+		 	$sql "insert into $m Values ('$(_st $nP)','$(_st $nama)','$kd','$(_st $alamat)','$tps','$(_st $status)','$(_st $pin)')" 
+			if [ "$?" -eq "0" ];then
+				_rs="<center><font color=green><strong>Sukses!</strong></font></center>"		
+			else
+				_rs="<center><font color=red><strong>Gagal!</strong></font></center>"
+			fi
+		else
+				_rs="<center><font color=red><strong>Gagal! , semua field harus terisi</strong></font></center>"
+		fi
+	;;
+	broadcast)
+		if [ "x$proc" == "x" ] && [ "$nama" != "" ] && [ "$pesan" != "" ];then
+		 	$sql "insert into $m Values ('$(_st $nama)','$(_st $pesan)')" 
+			if [ "$?" -eq "0" ];then
+				_rs="<center><font color=green><strong>Sukses!</strong></font></center>"		
+			else
+				_rs="<center><font color=red><strong>Gagal!</strong></font></center>"
+			fi
+		elif [ "$proc" == "sending" ];then
+			if [ "$tj" != "" ] && [ "$nP" != "" ];then
+				cp ./db/QCdata.db /tmp/sqPg.tmp
+				[ "$tj" == "Semua" ] || xw=" where status='$tj'"
+				sqlite3 /tmp/sqPg.tmp "select no_telpon from member$xw" > /tmp/tJb
+				isi=$(sqlite3 /tmp/sqPg.tmp "select isi_pesan from broadcast where nama_pesan='$nP'")
+				if [ "x$isi" != "x" ];then
+					ar=(`cat /tmp/tJb`)
+					for x in ${ar[@]};do
+						echo "$isi" | sed 's/_/ /g' > ./tmp/sms/out/kirim.sms.$x.broadcast
+					done
+					_rs="<center><font color=green><strong>Pesan dalam proses sending !</strong></font></center>"
+				else
+					_rs="<center><font color=green><strong>Error2</strong></font></center>"
+				fi
+			elif [ "$tujuan" != "" ] && [ "$pesant" != "" ];then
+				tu=(`echo $(_st $tujuan)`)
+				isi=$(_st $pesant)
+				y=0
+				for x in ${tu[@]};do
+					y=$[y+1]
+					echo "$isi" | sed 's/_/ /g' > ./tmp/sms/out/kirim$y.sms.$x.broadcast
+				done
+				_rs="<center><font color=green><strong>Pesan dalam proses sending !</strong></font></center>"
+				
+			fi
+		else
+				_rs="<center><font color=red><strong>Gagal! , semua field harus terisi</strong></font></center>"
+		fi
+	;;	
+esac
+fi
+. ./config/function
+cat <<EOF
+$(headF)
+
+
+<body id="dt_example" >
+		<div id="container">
+			<div id="demo">
+
+$(if [ "$m" != "" ] && [ "$m" != "login" ];then
+
+echo "
+$(case "$m" in
+	partai)
+		echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'>$(intext kode Kode Partai :)<script>document.getElementById('kode').focus()</script>$(intext nama Nama Partai :)$(intext deskrip Deskripsi :)<input class='button' type='submit' value='Input'></form></center>"
+	;;
+	caleg)
+		echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'>
+		<label for='partai'>Kode Partai :</label>
+			<select class='inputa' name='kp' id='kp'>
+			$($sql "select kode_partai from partai" | sed 's/ /_/g'> /tmp/kodeP
+			arP=(`cat /tmp/kodeP`)
+			for x in "${arP[@]}"
+			do
+				echo "<option>$x</option>"
+			done)
+			</select>
+		<label for='caleg'>No Urut Caleg :</label>
+			<select class='inputa' name='nocl' id='kp'>
+			$(for ((x=1; x < 15; x++));do
+				echo "<option>$x</option>"
+			done)
+			</select>
+		$(intext nama Nama Caleg :)<input class='button' type='submit' value='Input'></form></center>"
+	;;
+	desa)
+		echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'>$(intext kode Kode Desa :)<script>document.getElementById('kode').focus()</script>$(intext deskrip Deskripsi :)<input class='button' type='submit' value='Input'></form></center>"
+	;;
+	member)
+		echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'>
+			<label for='produk'>No Telp :</label> <input  class='input' name='nP' id='nP' type='text' >
+			<label for='produk'>Nama :</label> <input  class='input' name='nama' id='nama' type='text'>
+			<label for='supplier'>Kode Desa :</label>
+			<select class='inputa' name='kd' id='kd'>
+			$($sql "select kode_desa from desa" | sed 's/ /_/g'> /tmp/kodeP
+			arP=(`cat /tmp/kodeP`)
+			for x in "${arP[@]}"
+			do
+				echo "<option>$x</option>"
+			done)
+			</select><br />
+			<label for='produk'>Alamat Lengkap :</label> <input  class='input' name='alamat' id='alamat' type='text'>
+			<label for='tps'>TPS :</label>
+			<select class='inputa' name='tps' id='tps'>
+			$(for ((x=1; x < 40; x++));do
+				echo "<option>$x</option>"
+			done)
+			</select>
+			<label for='produk'>Status :</label> <input  class='inputa' name='status' id='status' type='text'>
+			<label for='produk'>PIN :</label> <input  class='inputa' name='pin' id='pin' type='text'>
+		<input class='button' type='submit' value='Input'></form>
+		" 
+	;;
+	broadcast)
+		if [ "$proc" == "" ];then
+			echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'>
+		
+			$(intext nama Nama Pesan :)<script>document.getElementById('nama').focus()</script>
+			<label for='produk'>Pesan :</label> <input  class='inputxl' name='pesan' id='pesan' type='text'>
+			<input class='button' type='submit' value='Simpan'></form><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'><input type='hidden' name='proc' value='sending'><input class='button' type='submit' value='Mulai Broadcast'></form></center>"
+		elif [ "$proc" == "sending" ];then
+			echo "<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'><input type='hidden' name='proc' value='sending'>
+		
+			<label for='nPesan'>Nama Pesan :</label>
+			<select class='inputa' name='nP' id='nP'>
+			$($sql "select nama_pesan from broadcast" | sed 's/ /_/g'> /tmp/namaP
+			arP=(`cat /tmp/namaP`)
+			for x in "${arP[@]}"
+			do
+				echo "<option>$x</option>"
+			done)
+			</select>
+
+			<label for='nPesan'>Tujuan :</label>
+			<select class='input' name='tj' id='tj'>
+			$($sql "select status from member group by status" | sed 's/ /_/g'> /tmp/tj
+			arP=(`cat /tmp/tj`)
+			echo "<option>Semua</option>"
+			for x in "${arP[@]}"
+			do
+				echo "<option>$x</option>"
+			done)
+			</select>
+			<input class='button' type='submit' value='Kirim'></form></center>
+			<center><form><input type='hidden' name='m' value='$m'><input type='hidden' name='u' value='in'><input type='hidden' name='proc' value='sending'>
+			$(intext tujuan Nomor tujuan :)<script>document.getElementById('tujuan').focus()</script><label for='produk'>Pesan :</label> <input  class='inputxl' name='pesant' id='pesant' type='text'><input class='button' type='submit' value='Kirim'></form></center>"
+		fi
+	;;
+	pengaturan)
+			echo "<center><table>
+			<tr><td>Modem 1 </td><td>=</td><td>Center Status</td><td>:</td><td><span id='setC1'><input class='button' type='submit' value='$([ "$(cat ./config/modem/status/c1)" == "0" ] && echo "Off" || echo "On")' onClick=\"setC1(this.value)\"></span></td><td>Sender Status</td><td>:</td><td><span id='setS1'><input class='button' type='submit' value='$([ "$(cat ./config/modem/status/s1)" == "0" ] && echo "Off" || echo "On")' onClick=\"setS1(this.value)\"></span></td></tr>
+			<tr><td>Modem 2 </td><td>=</td><td>Center Status</td><td>:</td><td><span id='setC2'><input class='button' type='submit' value='$([ "$(cat ./config/modem/status/c2)" == "0" ] && echo "Off" || echo "On")' onClick=\"setC2(this.value)\"></span></td><td>Sender Status</td><td>:</td><td><span id='setS2'><input class='button' type='submit' value='$([ "$(cat ./config/modem/status/s2)" == "0" ] && echo "Off" || echo "On")' onClick=\"setS2(this.value)\"></span></td></tr>
+			</table></center>"			
+	;;
+esac)<span>$_rs</span>
+<table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" class=\"display\" id=\"example\">
+	<thead>
+		<tr>
+			 					$(
+								colname=(`$sql "PRAGMA table_info($m)" | sed 's/ /_/g; s/|/ /g' | awk '{print $2}' | tr '[a-z]' '[A-Z]'`)
+								echo "<th>x</th>"
+								for x in "${colname[@]}"
+								do
+									echo "<th>$x</th>" | sed 's/_/ /g'
+								done)
+		</tr>
+	</thead>
+
+</table>
+"
+  fi
+)
+			</div>
+</div>
+$(jsF)
+$(if [ "$m" == "pengaturan" ];then
+	ajaxS setC1
+	ajaxS setC2
+	ajaxS setS1
+	ajaxS setS2
+ fi)
+$(. ./config/tablejs)
+<script>
+function sInv(){
+PopWindow('print.obg', 800, 800)
+}
+function aReport(){
+PopWindow('report.obg', 780, 800)
+}
+</script>
+
+	</body>
+
+
+</html>
+EOF
+fi
+

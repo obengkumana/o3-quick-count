@@ -1,0 +1,522 @@
+usern=$(echo "$(cat /tmp/$(echo -n "$REMOTE_ADDR|$(cat /proc/net/arp | grep $REMOTE_ADDR | awk '{print $4}' | tr "[a-z]" "A-Z")|obeng" | md5sum | cut -c1-25))" | awk -F '|' '{print $1}')
+headhtml () {			
+			echo "<html>
+			<head>
+			<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"30;URL=logs.obg?show=com\">			
+			</head>
+			<body>
+			"
+}
+nodriver () {
+			headhtml	
+			echo "<center>Driver belum dipilh !!</center>"		
+			echo "</body>
+			</html>"	
+}
+noussd () {
+			headhtml	
+			echo "<center>Perintah Kosong !!</center>"		
+			echo "</body>
+			</html>"
+}
+sqlist () {
+		sqlite3 $1 "select $2 from $3"
+}
+sqloop () {
+		sqlite3 $dbconf "select modul from $1"
+}
+sqldata () {
+		sqlite3 $dbdata "select $1 from $2"
+}
+intext () {
+		echo "<label for='$1'>$2 $3 $4 $5</label><br />
+		<input type='text' name='$1' id='$1'/>
+       	 <br />"
+}
+function txtar {
+		echo "<label for='$1'>$2 $3 $4</label><br />
+		<textarea name='$1' id='$1' cols='20' rows='2' style='width:200px'></textarea>
+       	 <br />"
+}
+
+function frmhead {
+		
+		echo "<html>
+		<head>
+			<title>$4 $5 $6 $7 $8</title>
+			<link rel='shortcut icon' href='images/favicon.ico' type='image/x-icon' />	
+		</head>
+		<body>
+		<form method='post' action='update.obg?target=$(echo "$1" | base64)' title='$4 $5 $6 $7 $8'>
+		<input type='hidden' name='btd' value='$(echo "$2" | base64)'>
+		<input type='hidden' name='blt' value='$(echo "$3" | base64)'>"
+}
+
+function frmfoot {
+		echo "<input	type='submit' value='Kirim'>
+		</form>
+		<br />
+		<center>
+			<input type='button' onclick=\"javascript:window.close()\"value='TUTUP'>
+			
+			</center>
+		</body>
+		</html>"
+		#$(echo "<input type='button' onclick=\"parent.window.opener.location='m.obg?m=m2c1'; window.close();\" value='EDIT'>")
+}
+
+function blankform {
+			echo "<html>
+			<head>
+			<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=insert.obg?action=$(echo "$1" | base64)&target=$(echo "$2" | base64)\">
+			</head>
+			<body>
+			"
+			echo "<center>Input Form tidak boleh ada yang kosong !!<br />"
+			echo "
+			</body>
+			</html>"
+}
+suksesform () {
+			echo "<html>
+				<head>
+			<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"0;URL=insert.obg?action=$(echo "$1" | base64)&target=$(echo "$2" | base64)\">
+			</head>
+			<body>
+							
+				<center><center>Input Data Sukses !!<br />&copy 2013 <a href='http://obengkumana.net' target='_blank'>Obengkumana Egine</a>
+				<br />
+				</body>			
+				</html>"			
+}
+gagalform () {
+				echo "<html>
+				<head>
+			<META HTTP-EQUIV=\"REFRESH\" CONTENT=\"1;URL=insert.obg?action=$(echo "$1" | base64)&target=$(echo "$2" | base64)\">
+			</head>
+			<body>				
+				<center><center>Input Data Gagal !! Silahkan Coba Kembali <br />&copy 2013 <a href='http://obengkumana.net' target='_blank'>Obengkumana Egine</a><br />
+				br />
+				</body>			
+				</html>"	
+}
+####################################
+#               MENU               # 
+####################################
+loopm () {
+	for x in "${m1[@]}"
+	do	
+		echo "
+		<li class='tabmenu $(eval \$s$(echo $x | sed 's/=.*//g'))' >
+		<a href=\"m.obg?m=$(echo $x | sed 's/=.*//g')\" > $(echo $x | sed 's/^.*=//g; s/"//g') </a>
+		</li>"
+	done
+}
+
+dtbjson () {
+	i=0
+	
+	for x in "${djson[@]}"
+	do
+		j="${#djson[*]}"
+		i=$[i+1]
+		yy=(`echo $x | sed 's/|/ /g'`)
+		if [ "$i" == "$j" ]
+		then
+		 echo "	[\"<center><input type='checkbox' name='0b3ng' class='0b3ng' value='$(echo ${yy[0]})'><\/input><\/center>\", \"$x\" ]" | sed 's/|/", "/g' >> /tmp/json$table.$REMOTE_ADDR 		
+		else	
+		  echo "	[\"<center><input type='checkbox' name='0b3ng' class='0b3ng' value='$(echo ${yy[0]})'><\/input><\/center>\", \"$x\" ]," | sed 's/|/", "/g' >> /tmp/json$table.$REMOTE_ADDR
+		fi 
+	done	
+	echo "] }" >> /tmp/json$table.$REMOTE_ADDR	
+	echo "$(cat /tmp/json$table.$REMOTE_ADDR)" | sed 's/_/ /g; s/0b6/_/'
+}
+
+txthead () {
+					echo  "	{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+                                                  	submit:'Simpan',
+								loadtype: 'GET',
+								sUpdateURL: \"update.obg?target=$(echo "update" | base64)&btd=$(echo "$1" | base64)&blt=$(echo "$2" | base64)&lkey=$(echo "$3" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+							}"
+							
+}
+txtheadloop () {
+			for ((x=1;x<$4;x++))
+			do
+				txthead $1 $2 $3
+				echo ","
+			done
+			txthead $1 $2 $3
+}
+selectopthead () {
+			echo "
+				{
+                                                  	tooltip: 'Klik 2x untuk memilih',
+                                                  	loadtext: 'Loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                        loadurl: 'opsi.obg?req=$(echo "$1" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)',
+								loadtype: 'GET',
+								sUpdateURL: \"update.obg?target=$(echo "update" | base64)&btd=$(echo "config.db" | base64)&blt=$(echo "$2" | base64)&lkey=$(echo "$3" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+                    					}
+				"
+}
+selectoptheadtrx () {
+			echo "
+				{
+                                                  	tooltip: 'Klik 2x untuk memilih',
+                                                  	loadtext: 'Loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                        loadurl: 'opsi.obg?req=$(echo "$1" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)',
+								loadtype: 'GET',
+								sUpdateURL: \"update.obg?target=$(echo "update" | base64)&btd=$(echo "trx.db" | base64)&blt=$(echo "$2" | base64)&lkey=$(echo "$3" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+                    					}
+				"
+}
+_sprod () {
+			echo "
+				{
+                                                  	tooltip: 'Klik 2x untuk memilih',
+                                                  	loadtext: 'Loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                        loadurl: 'opsi.obg?req=$(echo "$1" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)',
+								loadtype: 'GET',
+								sUpdateURL: \"update.obg?target=$(echo "$4" | base64)&btd=$(echo "$5" | base64)&blt=$(echo "$2" | base64)&lkey=$(echo "$3" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+                    					}
+				"
+}
+selectopthead2 () {
+			echo "
+							{
+                                                  	indicator: 'Menimpan Perubahan ...',
+                                                 	tooltip: 'Klik 2x untuk memilih ...',
+                                                 	loadtext: 'loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                 	data: \"{'$1':'$1','$2':'$2'}\",
+								sUpdateURL: \"update.obg?target=$(echo "update" | base64)&btd=$(echo "config.db" | base64)&blt=$(echo "$3" | base64)&lkey=$(echo "$4" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+							}	
+				"
+}
+selectaddchartb () {
+			echo "
+							{
+                                                  	indicator: 'Menimpan Perubahan ...',
+                                                 	tooltip: 'Klik 2x untuk memilih ...',
+                                                 	loadtext: 'loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                 	data: \"{'$1':'$1','$2':'$2'}\",
+								sUpdateURL: \"update.obg?target=$(echo "addcartb" | base64)&btd=$(echo "POSdata.db" | base64)&blt=$(echo "$3" | base64)&lkey=$(echo "$4" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+							}	
+				"
+}
+selectaddchartj () {
+			echo "
+							{
+                                                  	indicator: 'Menimpan Perubahan ...',
+                                                 	tooltip: 'Klik 2x untuk memilih ...',
+                                                 	loadtext: 'loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                 	data: \"{'$1':'$1','$2':'$2'}\",
+								sUpdateURL: \"update.obg?target=$(echo "addcartj" | base64)&btd=$(echo "POSdata.db" | base64)&blt=$(echo "$3" | base64)&lkey=$(echo "$4" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+							}	
+				"
+}
+selectopthead3 () {
+			echo "
+							{
+                                                  	indicator: 'Menimpan Perubahan ...',
+                                                 	tooltip: 'Klik 2x untuk memilih ...',
+                                                 	loadtext: 'loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                 	data: \"{'$1':'$1','$2':'$2'}\",
+								sUpdateURL: \"update.obg?target=$(echo "update" | base64)&btd=$(echo "$3" | base64)&blt=$(echo "$4" | base64)&lkey=$(echo "$5" | base64)&xukey=$(echo -n $REMOTE_ADDR | base64)\"
+							}	
+				"
+}
+formsubmitalert () {
+			echo "
+					\$('#form').submit( function() {
+					var sData = \$('input', oTable.fnGetNodes()).serialize();					
+					if (sData.length==0){
+            					alert(\"Silahkan beri tanda pada $1 yang diinginkan untuk diproses .\");
+            				return false;
+        				}					
+					} );
+			"
+}
+
+col_width_ajax () {
+			echo "
+						\"aoColumnDefs\": ["
+				nl=`echo $1`
+				countloop=$[nl-1]
+				zz=-1
+				yy=0
+				arcolm=(`cat /tmp/ab.$REMOTE_ADDR`)
+				for x in "${arcolm[@]}"
+				do	
+					zz=$[zz+1]
+					yy=$[yy+1]
+					if [ "${#arcolm[*]}" == "$yy" ]
+					then	
+						echo " 							{ \"sWidth\": \"$x\", \"aTargets\": [ $zz ] }"																	
+					else
+						echo " 							{ \"sWidth\": \"$x\", \"aTargets\": [ $zz ] },"					
+					fi					
+ 
+				done		
+				echo "						],
+					\"fnServerData\": function ( sSource, aoData, fnCallback, oSettings ) {
+      						oSettings.jqXHR = \$.ajax( {
+       					 \"dataType\": 'json',
+        					\"type\": \"GET\",
+        					\"url\": sSource,
+        					\"data\": aoData,
+        					\"success\": fnCallback
+      					} );					
+					},
+				"
+}
+ 
+_optglobal () {
+	opglobal="
+
+
+<form name='ckall' id='form' method='post' action='m.obg?m=$page' >
+<input type='hidden' name='btd' value='$(echo "$dbsql" | base64)'>
+<input type='hidden' name='blt' value='$(echo "$table" | base64)'>
+<input type='hidden' name='key' value='$(echo "$xidkey" | base64)'>
+<input type='submit' id='cbx3' onClick=\"return confirm( 'Hapus ?' )\" name='act'value='Hapus'>
+<label for='customer'>   Customer :</label>
+<select name='customer' onchange=\"getQ(this.value)\" id='customer' >
+<option value=''>Pilih Costumer :</option>
+$(sqlist $dbconf id,nama checkin  > /tmp/checkin.$REMOTE_ADDR
+sqlist $dbconf id,nama checkout  >> /tmp/checkin.$REMOTE_ADDR			
+			armodul=(`cat /tmp/checkin.$REMOTE_ADDR`)
+			for x in "${armodul[@]}"
+			do
+				echo "<option value='$x' >$x</option>" | sed 's/_/ /g'
+			done
+)
+</select>
+<label for='price'>   Pilih Harga :</label>
+<select name='price' id='price' onchange=\"getW(this.value)\" >
+<option value=''>Pilih :</option>
+<option value='standar'>Standar</option>
+$(sqlist $dbconf2 nama persentase  > /tmp/persenbrg.$REMOTE_ADDR			
+			armodul=(`cat /tmp/persenbrg.$REMOTE_ADDR`)
+			for x in "${armodul[@]}"
+			do
+				echo "<option value='$x' >$x</option>" | sed 's/_/ /g'
+			done
+)
+</select>
+<label for='qty'>Quantity :</label><input type='text' name='qty' id='qty' value='1' size='2' onkeyup=\"getZ(this.value)\" required/>
+
+"
+
+}
+
+_invoiceform () {
+	sqlite3 /www/config/db/POSconfig.db "select  * from invoicebarang" | sed 's/ /_/g; s/|/ /g' > /tmp/invtempbarang.$REMOTE_ADDR
+	sqlite3 /www/config/db/POSconfig.db "select  * from invoicejasa" | sed 's/ /_/g; s/|/ /g' > /tmp/invtempjasa.$REMOTE_ADDR
+
+bg=$3
+js=$4
+_F () {
+	grep -w "$1" /tmp/invtempbarang.$REMOTE_ADDR | awk '{print $2}' | sed 's/_/ /g'
+}
+_FF () {
+	grep -w "$1" /tmp/invtempjasa.$REMOTE_ADDR | awk '{print $2}' | sed 's/_/ /g'
+}
+finv () {
+	echo "<tr><td colspan='5' class='val'>Total  : Rp. </td><td class='val'>$totala</td></tr>
+<tr><td colspan='5' ></td><td><hr></td></tr>
+<tr><td colspan='6' class='pp'>Terbilang : $(./des $(echo $totala | sed 's/\.//g')) Rupiah</td></tr>
+<tr><td colspan='4'></td><td colspan='2' class='ctn' >Banjar Agung, $(./dck $(date -I | sed 's/-/ /g'))</left></td></tr>
+<tr><td colspan='6' class='ctn2'></td></tr>
+<tr><td colspan='4'></td><td colspan='2' class='ctn2' ><u><b>( $(echo "$usern" | tr "a-z" "A-Z") )</b></u></td></tr>
+"
+}
+echo "<!DOCTYPE html>
+<html>
+<head>
+<title> Invoice $1 - $( echo $2 | sed 's/_/ /g')</title>
+<script language='javascript' type='text/javascript'>
+        function printDiv(divID) {
+            //Get the HTML of div
+            var divElements = document.getElementById(divID).innerHTML;
+            //Get the HTML of whole page
+            var oldPage = document.body.innerHTML;
+
+            //Reset the page's HTML with div's HTML only
+            document.body.innerHTML = 
+              '<html><head><title></title></head><body>' + 
+              divElements + '</body>';
+
+            //Print Page
+            window.print();
+
+            //Restore orignal HTML
+		//parent.window.opener.location='m.obg?m=m2c1'; 
+		//window.close();
+            document.body.innerHTML = oldPage;
+
+          
+        }
+    </script>
+<style>
+h1 {
+font-family: 'Times New Roman';
+font-size:21px;
+line-height: 0px;
+}
+h2 {
+font-family: 'Times New Roman';
+font-size:15px;
+line-height: 0px;
+
+}
+h3 {
+font-family: 'Times New Roman';
+font-size:10px;
+line-height: 0px;
+
+}
+h4 {
+font-family: tahoma;
+font-size:12px;
+line-height: 0px;
+}
+p {
+font-size:14px;
+line-height: 4px;
+}
+
+body {
+font-family: calibri;
+font-size:11px;
+}
+.val
+{
+text-align:right;
+}
+.cnt
+{
+text-align:center;
+}
+.ctn
+{
+text-align:center;
+line-height: 20px;
+}
+.ctn2
+{
+text-align:center;
+line-height: 120px;
+}
+</style>
+</head>
+<body>"
+
+if [ "$bg" = "1" ];then
+echo "<div id='printBrg' >
+<table width='$(_F lebar)px'>"
+if [ "$5" != "record" ];then
+
+echo "
+
+<tr><td rowspan='4'> <img src='./images/mutiara-mini.png' alt='logo' title='LOGO' width='125' height='130' align='middle'></td><td colspan='5'><h1><b><center>$(_F head1)</center></b></h1></td></tr>
+<tr><td colspan='5'><h1><b><center>$(_F head2)</center></b></h1></td></tr>
+<tr><td colspan='5'><h2><b><center>$(_F head3)</center></b></h2></td></tr>
+<tr><td colspan='5'><h2><b><center>$(_F head4)</center> </b></h2></td></tr>
+<tr><td colspan='6'><hr></td></tr>"
+fi
+echo "
+<tr><td width='23%'>$(_F keterangan_baris1_kolom1)</td><td width='2%'>:</td><td width='25%'>$noreg</td><td width='23%'>$(_F keterangan_baris1_kolom2)</td><td width='2%'>:</td><td width='25%'>$checkin</td></tr>
+<tr><td>$(_F keterangan_baris2_kolom1)</td><td>:</td><td>$nama/$umur</td><td>$(_F keterangan_baris2_kolom2)</td><td>:</td><td>$checkout</td></tr>
+<tr><td>$(_F keterangan_baris3_kolom1)</td><td>:</td><td>$alamat</td><td>$(_F keterangan_baris3_kolom2)</td><td>:</td><td>$ket</td></tr>
+
+$xinfo
+<tr><td colspan='6'><h4><b><center><u>$(_F title)</u></center></b></h4></td></tr>
+</table>
+<p> 
+<table width='$(_F lebar)px'>
+<tr><td width='5%'>No. </td><td width='37%'>Nama </td><td width='10%' class='cnt'>Jumlah</td><td width='12%'>Satuan</td><td width='16%' class='cnt'>Harga </td><td width='20%' class='cnt'>Total</td></tr>
+<tr><td colspan='6'><hr></td></tr>
+$_target_input1
+<tr><td colspan='6'><hr></td></tr>"
+if [ "$js" != "1" ];then
+finv
+fi
+echo "</table>
+</div>
+<input type='button' value='Cetak Invoice 1' onclick=\"javascript:printDiv('printBrg')\" />"
+else
+	echo "<br /><center><table border='1'><tr><td>Rincian Barang Tidak Tersedia</td></tr></table></center> <br />"	
+fi
+if [ "$js" = "1" ];then
+	echo "
+<div id='printJasa' >
+<table width='$(_FF lebar)px'>"
+if [ "$5" != "record" ];then
+echo "
+<tr><td rowspan='4'> <img src='./images/mutiara-mini.png' alt='logo' title='LOGO' width='125' height='130' align='middle'></td><td colspan='5'><h1><b><center>$(_FF head1)</center></b></h1></td></tr>
+<tr><td colspan='5'><h1><b><center>$(_FF head2)</center></b></h1></td></tr>
+<tr><td colspan='5'><h2><b><center>$(_FF head3)</center></b></h2></td></tr>
+<tr><td colspan='5'><h2><b><center>$(_FF head4)</center> </b></h2></td></tr>
+<tr><td colspan='6'><hr></td></tr>"
+fi
+echo "
+<tr><td width='23%'>$(_FF keterangan_baris1_kolom1)</td><td width='2%'>:</td><td width='25%'>$noreg</td><td width='23%'>$(_FF keterangan_baris1_kolom2)</td><td width='2%'>:</td><td width='25%'>$checkin</td></tr>
+<tr><td>$(_FF keterangan_baris2_kolom1)</td><td>:</td><td>$nama/$umur</td><td>$(_FF keterangan_baris2_kolom2)</td><td>:</td><td>$checkout</td></tr>
+<tr><td>$(_FF keterangan_baris3_kolom1)</td><td>:</td><td>$alamat</td><td>$(_FF keterangan_baris3_kolom2)</td><td>:</td><td>$ket</td></tr>
+
+$xinfo
+<tr><td colspan='6'><h4><b><center><u>$(_FF title)</u></center></b></h4></td></tr>
+</table>
+<p> 
+<table width='$(_FF lebar)px'>
+<tr><td width='5%'>No. </td><td width='37%'>Nama </td><td width='10%' class='cnt'>Jumlah</td><td width='12%'>Satuan</td><td width='16%' class='cnt'>Harga </td><td width='20%' class='cnt'>Total</td></tr>
+<tr><td colspan='6'><hr></td></tr>
+$_target_input2
+<tr><td colspan='6'><hr></td></tr>
+$(finv)
+</table>
+</div>
+<input type='button' value='Cetak Invoice 2' onclick=\"javascript:printDiv('printJasa')\" />"
+else
+	echo "<br /><br /><br /><center><table border='1'><tr><td>Rincian Jasa Tidak Tersedia</td></tr></table></center>"	
+fi
+	
+echo "
+</body>
+</html>"
+}
+
+_calculator () {
+echo "
+<Script Language='Javascript'>
+<!-- HTML Encryption provided by Obengkumana.com -->
+<!--
+document.write(unescape('%3C%68%74%6D%6C%3E%0A%3C%68%65%61%64%3E%0A%3C%73%74%79%6C%65%3E%0A%62%6F%64%79%0A%7B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%74%61%6E%3B%0A%7D%0A%68%32%0A%7B%0A%74%65%78%74%2D%61%6C%69%67%6E%3A%63%65%6E%74%65%72%3B%0A%74%65%78%74%2D%64%65%63%6F%72%61%74%69%6F%6E%3A%75%6E%64%65%72%6C%69%6E%65%3B%0A%7D%0A%2E%62%6F%78%0A%7B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%23%33%64%34%35%34%33%3B%0A%68%65%69%67%68%74%3A%33%30%30%70%78%3B%0A%77%69%64%74%68%3A%32%35%30%70%78%3B%0A%62%6F%72%64%65%72%2D%72%61%64%69%75%73%3A%31%30%70%78%3B%0A%70%6F%73%69%74%69%6F%6E%3A%72%65%6C%61%74%69%76%65%3B%0A%0A%7D%0A%2E%64%69%73%70%6C%61%79%0A%7B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%23%32%32%32%3B%0A%77%69%64%74%68%3A%32%32%30%70%78%3B%0A%70%6F%73%69%74%69%6F%6E%3A%72%65%6C%61%74%69%76%65%3B%0A%6C%65%66%74%3A%31%35%70%78%3B%0A%74%6F%70%3A%32%30%70%78%3B%0A%68%65%69%67%68%74%3A%34%30%70%78%3B%0A%7D%0A%2E%64%69%73%70%6C%61%79%20%69%6E%70%75%74%0A%7B%0A%70%6F%73%69%74%69%6F%6E%3A%72%65%6C%61%74%69%76%65%3B%0A%6C%65%66%74%3A%32%70%78%3B%0A%74%6F%70%3A%32%70%78%3B%0A%68%65%69%67%68%74%3A%33%35%70%78%3B%0A%63%6F%6C%6F%72%3A%62%6C%61%63%6B%3B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%23%62%63%63%64%39%35%3B%0A%66%6F%6E%74%2D%73%69%7A%65%3A%32%31%70%78%3B%0A%74%65%78%74%2D%61%6C%69%67%6E%3A%72%69%67%68%74%3B%0A%7D%0A%2E%6B%65%79%73%0A%7B%0A%70%6F%73%69%74%69%6F%6E%3A%72%65%6C%61%74%69%76%65%3B%0A%74%6F%70%3A%31%35%70%78%3B%0A%7D%0A%2E%62%75%74%74%6F%6E%0A%7B%0A%77%69%64%74%68%3A%34%30%70%78%3B%0A%68%65%69%67%68%74%3A%33%30%70%78%3B%0A%62%6F%72%64%65%72%3A%6E%6F%6E%65%3B%0A%62%6F%72%64%65%72%2D%72%61%64%69%75%73%3A%38%70%78%3B%0A%6D%61%72%67%69%6E%2D%6C%65%66%74%3A%31%37%70%78%3B%0A%63%75%72%73%6F%72%3A%70%6F%69%6E%74%65%72%3B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%32%70%78%20%73%6F%6C%69%64%20%74%72%61%6E%73%70%61%72%65%6E%74%3B%0A%7D%0A%2E%62%75%74%74%6F%6E%2E%67%72%61%79%0A%7B%0A%63%6F%6C%6F%72%3A%77%68%69%74%65%3B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%23%36%66%36%66%36%66%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%32%70%78%20%23%36%66%36%66%36%66%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%62%75%74%74%6F%6E%2E%70%69%6E%6B%0A%7B%0A%63%6F%6C%6F%72%3A%62%6C%61%63%6B%3B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%23%66%66%34%35%36%31%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%62%75%74%74%6F%6E%2E%62%6C%61%63%6B%0A%7B%0A%63%6F%6C%6F%72%3A%77%68%69%74%65%3B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%33%30%33%30%33%30%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%32%70%78%20%33%30%33%30%33%30%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%62%75%74%74%6F%6E%2E%6F%72%61%6E%67%65%0A%7B%0A%63%6F%6C%6F%72%3A%62%6C%61%63%6B%3B%0A%62%61%63%6B%67%72%6F%75%6E%64%2D%63%6F%6C%6F%72%3A%46%46%39%39%33%33%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%32%70%78%20%46%46%39%39%33%33%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%67%72%61%79%3A%61%63%74%69%76%65%0A%7B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%32%70%78%20%23%36%66%36%66%36%66%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%70%69%6E%6B%3A%61%63%74%69%76%65%0A%7B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%23%66%66%34%35%36%31%20%32%70%78%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%62%6C%61%63%6B%3A%61%63%74%69%76%65%0A%7B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%23%33%30%33%30%33%30%20%32%70%78%20%73%6F%6C%69%64%3B%0A%7D%0A%2E%6F%72%61%6E%67%65%3A%61%63%74%69%76%65%0A%7B%0A%62%6F%72%64%65%72%2D%74%6F%70%3A%62%6C%61%63%6B%20%32%70%78%20%73%6F%6C%69%64%3B%0A%62%6F%72%64%65%72%2D%62%6F%74%74%6F%6D%3A%46%46%39%39%33%33%20%32%70%78%20%73%6F%6C%69%64%3B%0A%7D%0A%70%0A%7B%0A%6C%69%6E%65%2D%68%65%69%67%68%74%3A%31%30%70%78%3B%0A%7D%0A%0A%3C%2F%73%74%79%6C%65%3E%0A%3C%73%63%72%69%70%74%3E%0A%66%75%6E%63%74%69%6F%6E%20%63%28%76%61%6C%29%0A%7B%0A%09%64%6F%63%75%6D%65%6E%74%2E%67%65%74%45%6C%65%6D%65%6E%74%42%79%49%64%28%22%64%22%29%2E%76%61%6C%75%65%3D%76%61%6C%3B%0A%7D%0A%66%75%6E%63%74%69%6F%6E%20%76%28%76%61%6C%29%0A%7B%0A%09%64%6F%63%75%6D%65%6E%74%2E%67%65%74%45%6C%65%6D%65%6E%74%42%79%49%64%28%22%64%22%29%2E%76%61%6C%75%65%2B%3D%76%61%6C%3B%0A%7D%0A%66%75%6E%63%74%69%6F%6E%20%65%28%29%20%0A%7B%20%0A%09%74%72%79%20%0A%09%7B%20%0A%09%20%20%63%28%65%76%61%6C%28%64%6F%63%75%6D%65%6E%74%2E%67%65%74%45%6C%65%6D%65%6E%74%42%79%49%64%28%22%64%22%29%2E%76%61%6C%75%65%29%29%20%0A%09%7D%20%0A%09%63%61%74%63%68%28%65%29%20%0A%09%7B%0A%09%20%20%63%28%27%45%72%72%6F%72%27%29%20%0A%09%7D%20%0A%7D%0A%3C%2F%73%63%72%69%70%74%3E%0A%3C%2F%68%65%61%64%3E%0A%3C%62%6F%64%79%3E%0A%0A%3C%64%69%76%20%63%6C%61%73%73%3D%22%62%6F%78%22%3E%0A%09%3C%64%69%76%20%63%6C%61%73%73%3D%22%64%69%73%70%6C%61%79%22%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%74%65%78%74%22%20%72%65%61%64%6F%6E%6C%79%20%73%69%7A%65%3D%22%31%38%22%20%69%64%3D%22%64%22%3E%3C%2F%64%69%76%3E%0A%09%3C%64%69%76%20%63%6C%61%73%73%3D%22%6B%65%79%73%22%3E%0A%09%09%3C%70%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%67%72%61%79%22%20%76%61%6C%75%65%3D%22%6D%72%63%22%20%6F%6E%63%6C%69%63%6B%3D%27%63%28%22%45%64%69%74%65%64%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%67%72%61%79%22%20%76%61%6C%75%65%3D%22%6D%2D%22%20%6F%6E%63%6C%69%63%6B%3D%27%63%28%22%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%62%79%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%2E%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%67%72%61%79%22%20%76%61%6C%75%65%3D%22%6D%2B%22%20%6F%6E%63%6C%69%63%6B%3D%27%63%28%22%2E%2E%2E%2E%2E%2E%2E%2E%4F%62%65%6E%67%6B%75%6D%61%6E%61%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%70%69%6E%6B%22%20%76%61%6C%75%65%3D%22%2F%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%2F%22%29%27%3E%3C%2F%70%3E%0A%09%09%3C%70%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%37%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%37%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%38%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%38%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%39%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%39%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%70%69%6E%6B%22%20%76%61%6C%75%65%3D%22%2A%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%2A%22%29%27%3E%3C%2F%70%3E%0A%09%09%3C%70%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%34%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%34%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%35%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%35%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%36%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%36%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%70%69%6E%6B%22%20%76%61%6C%75%65%3D%22%2D%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%2D%22%29%27%3E%3C%2F%70%3E%0A%09%09%3C%70%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%31%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%31%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%32%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%32%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%33%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%33%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%70%69%6E%6B%22%20%76%61%6C%75%65%3D%22%2B%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%2B%22%29%27%3E%3C%2F%70%3E%0A%09%09%3C%70%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%30%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%30%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%2E%22%20%6F%6E%63%6C%69%63%6B%3D%27%76%28%22%2E%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%62%6C%61%63%6B%22%20%76%61%6C%75%65%3D%22%43%22%20%6F%6E%63%6C%69%63%6B%3D%27%63%28%22%22%29%27%3E%3C%69%6E%70%75%74%20%74%79%70%65%3D%22%62%75%74%74%6F%6E%22%20%63%6C%61%73%73%3D%22%62%75%74%74%6F%6E%20%6F%72%61%6E%67%65%22%20%76%61%6C%75%65%3D%22%3D%22%20%6F%6E%63%6C%69%63%6B%3D%27%65%28%29%27%3E%3C%2F%70%3E%0A%09%3C%2F%64%69%76%3E%0A%3C%2F%64%69%76%3E%0A%0A%3C%2F%62%6F%64%79%3E%0A%3C%2F%68%74%6D%6C%3E'));
+//-->
+</Script>
+"
+}

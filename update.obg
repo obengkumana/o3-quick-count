@@ -1,0 +1,195 @@
+#!/bin/bash
+keyx=$(echo -n "$REMOTE_ADDR|$(cat /proc/net/arp | grep $REMOTE_ADDR | awk '{print $4}' | tr "[a-z]" "A-Z")|obeng" | md5sum | cut -c5-25)
+if [ -f /tmp/$keyx ];then
+eval $(echo "$QUERY_STRING" | awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+read QUERY_STRING
+eval $(echo "$QUERY_STRING"|awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+sql="sqlite3 ./db/QCdata.db"
+id=$(echo "$id" | tr "+" " " | sed 's/^.*.value%3D//; s/%.*//; s/ /_/g')
+colname=`echo "$columnName" | tr '[A-Z]' '[a-z]' | tr "+" "_"`
+value=`echo $value | tr "+" "_" | tr " " "_"| sed -f ./shtml`
+case "$req" in
+	update)
+		if [ "$value" == "Hapus" ];then
+			if [ "$p" == "pengaturan" ];then
+				echo "Akses Ditolak"
+			else
+				$sql "Delete from $p where rowid=$id" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses"		
+				else
+					echo "Gagal"
+				fi
+			fi
+		else
+		if [ "$p" == "penjualan" ];then
+			#$sql "select nama_barang from penjualan where rowid=$id" > /tmp/xNmB
+			#np="$(cat/tmp/xNmB)"
+			x00="$np"
+			if [ "$colname" == "jumlah" ];then
+				$sql "UPDATE $p SET $colname='$value', total=harga*'$value' where rowid=$id" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses"		
+				else
+					echo "Gagal"
+				fi
+			elif [ "$colname" == "harga" ];then
+				$sql "UPDATE $p SET $colname='$value', total=jumlah*'$value' where rowid=$id" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses"		
+				else
+					echo "Gagal"
+				fi
+			elif [ "$colname" == "total" ];then
+				echo "Akses Ditolak!"
+			else
+				$sql "UPDATE $p SET $colname='$value' where rowid=$id" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses"		
+				else
+					echo "Gagal"
+				fi
+			fi
+		elif [ "$p" == "produk" ];then
+			nP=$($sql "select nama from produk where rowid=$id")
+			if [ "$colname" == "harga_modal" ] || [ "$colname" == "hj_a" ] || [ "$colname" == "hj_b" ] || [ "$colname" == "hj_c" ];then
+				$sql "UPDATE $p SET $colname='$value' where nama='$nP'" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses"		
+				else
+					echo "Gagal"
+				fi			
+			else
+				$sql "UPDATE $p SET $colname='$value' where rowid=$id" #" > /tmp/sss
+				if [ "$?" -eq "0" ];then
+					echo "Sukses $colname $nP"		
+				else
+					echo "Gagal"
+				fi
+			fi
+				
+		else 			
+			$sql "UPDATE $p SET $colname='$value' where rowid=$id" #" > /tmp/sss
+			if [ "$?" -eq "0" ];then
+				echo "Sukses"		
+			else
+				echo "Gagal"
+			fi
+		fi
+		fi
+
+	;;
+	nameP)
+		if [ "$(echo $value | wc -c)" -gt "1" ];then
+			$sql "select kode, nama_produk from nama_produk where kode like '%$value%'" | sed 's/ /_/g' > /tmp/nameP
+			arnP=(`cat /tmp/nameP`)
+			echo "<table>
+			$(for x in "${arnP[@]}"
+			do
+				echo "<tr><td> $(echo $x | sed 's/_/ /g') </td><td><input type='radio' name='vname' value='$(echo $x | awk -F "|" '{print $2}')' onclick=\"setN(this.value)\"><br /></td><tr>"
+			done)
+			</table>" 
+		fi
+	;;
+	setN)
+		echo "$value" > /tmp/setN
+		$sql "select * from produk where nama='$(cat /tmp/setN)' limit 1" > /tmp/SQ		
+		if [ -s /tmp/SQ ];then
+			ar=(`cat /tmp/SQ |sed 's/ /_/g; s/|/ /g'`)
+			echo ${ar[0]} > /tmp/setSup
+			echo ${ar[2]} > /tmp/setN
+			echo ${ar[3]} > /tmp/setSum			
+			echo ${ar[4]} > /tmp/setHm
+			echo ${ar[5]} > /tmp/setHJA
+			echo ${ar[6]} > /tmp/setHJB
+			echo ${ar[7]} > /tmp/setHJC
+			echo ""
+			echo "<div id='nameP'><table style=\"overflow:auto;padding:0px 10px;border:1px solid #bbbbbb;background:yellow;font-size:11px;\"><tr><td>Nama Supplier : <span id='setSup'>${ar[0]}</span></td><td>| Nama produk : ${ar[2]}</td><td>| Jumlah : <span id='setSum'>1</span></td><td>| Harga Modal : <span id='setHm'>${ar[4]}</span></td><td>| HJ-A : <span id='setHJA'>${ar[5]}</span></td><td>| HJ-B : <span id='setHJB'>${ar[6]}</span></td><td>| HJ-C : <span id='setHJC'>${ar[7]}</span></td></tr></table></div>"
+		else
+			echo ""
+			echo "<div id='nameP'><table style=\"overflow:auto;padding:0px 10px;border:1px solid #bbbbbb;background:yellow;font-size:11px;\"><tr><td>Nama Supplier : <span id='setSup'>$(cat /tmp/setSup)</span></td><td>| Nama produk : $(cat /tmp/setN | sed 's/_/ /g')</td><td>| Jumlah : <span id='setSum'>$(cat /tmp/setSum)</span></td><td>| Harga Modal : <span id='setHm'>$(cat /tmp/setHm)</span></td><td>| HJ-A : <span id='setHJA'>$(cat /tmp/setHJA)</span></td><td>| HJ-B : <span id='setHJB'>$(cat /tmp/setHJB)</span></td><td>| HJ-C : <span id='setHJC'>$(cat /tmp/setHJC)</span></td></tr></table></div>"
+		fi
+	;;
+	setC)
+		sC=$(echo $value | awk -F "ob3" '{print $1}')
+		sGh=$(echo $value | awk -F "ob3" '{print $2}') 
+		echo "$sC" > /tmp/setC
+		echo "$sGh" > /tmp/setGh
+		echo ""
+		echo "<div id='nameC'><table style=\"overflow:auto;padding:0px 10px;border:1px solid #bbbbbb;background:yellow;font-size:11px;\">
+			<tr><td>Nama Customer : $(cat /tmp/setC)</td><td>| Group Harga : $(cat /tmp/setGh)</td></tr>
+			</table></div>"
+		
+	;;
+	setSup|setSum|setHm|setHJA|setHJB|setHJC)
+		echo "$value" > /tmp/$req
+		#echo ""
+		echo $(cat /tmp/$req)
+	;;
+	setCust)
+		echo "$value" > /tmp/setC
+		#echo ""
+		#echo $(cat /tmp/$req)
+	;;
+	nameC)
+		if [ "$(echo $value | wc -c)" -gt "1" ];then
+			$sql "select nama, harga from customer where nama like '%$value%'" | sed 's/ /_/g' > /tmp/nameC
+			arnP=(`cat /tmp/nameC`)
+			echo "<table>
+			$(for x in "${arnP[@]}"
+			do
+				echo "<tr><td> $(echo $x | sed 's/_/ /g') </td><td><input type='radio' name='vname' value='$(echo $x | sed 's/ /_/g; s/|/ob3/g; ')' onclick=\"setC(this.value)\"><br /></td><tr>"
+			done)
+			</table>" 
+		fi
+	;;
+	searchP)
+		if [ "$(echo $value | wc -c)" -gt "1" ];then
+			$sql "select kode, nama from produk where nama like '%$value%'" | sed 's/ /_/g' > /tmp/searchP
+			arnP=(`cat /tmp/searchP`)
+			echo "<table>
+			$(for x in "${arnP[@]}"
+			do
+				echo "<tr><td> $(echo $x | sed 's/_/ /g') </td><td><input type='radio' name='vname' value='$(echo $x | sed 's/ /_/g; s/|/ob3/g; ')' onclick=\"setPtrx(this.value)\"><br /></td><tr>"
+			done)
+			</table>" 
+		fi
+	;;
+	setPtrx)
+		sPbar=$(echo $value | awk -F "ob3" '{print $1}')
+		echo $sPbar > /tmp/sPbar
+		echo "<input  class='input' type='text' name='barcode' id='barcode' value='$sPbar'>"
+		
+	;;
+	searchIDtrx)
+		echo $value > /tmp/numInv
+	;;
+	setUp)
+		echo ${value}000 > /tmp/setUp
+	;;
+	rpaymenT)
+		a="$(cat /tmp/billInv)"
+		b="$value"
+		c=$[b-a]
+		echo "$b" > /tmp/Pay
+		echo "$c" > /tmp/retur		
+		echo "<input  class='input' type='text' name='retur' id='retur' value='$(./dec $c)' >"
+	;;
+	noNot)
+		echo $value > ./data/invoice
+	;;
+	setC1|setS1|setC2|setS2)
+		a=$(echo $req | tr 'A-Z' 'a-z' | sed 's/set//')
+		if [ "$value" == "On" ];then
+			echo "0" > ./config/modem/status/"$a"
+		else
+			echo "1" > ./config/modem/status/"$a"
+
+		fi
+		echo "<input class='button' type='submit' value='$([ "$(cat ./config/modem/status/$a)" == "0" ] && echo "Off" || echo "On")' onClick=\"$req(this.value)\">"
+	;;
+	*)
+		echo "OK"
+	;;
+esac
+fi

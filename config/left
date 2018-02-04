@@ -1,0 +1,35 @@
+cat <<OBG
+<div class="container-fluid">
+		<div class="row-fluid">
+				
+			<!-- left menu starts -->
+			<div class="span2 main-menu-span">
+				<div class="well nav-collapse sidebar-nav">
+					<ul class="nav nav-tabs nav-stacked main-menu">
+						<li class="nav-header hidden-tablet">Menu</li>
+						<li><a class="ajax-link" href="./"><i class="icon-home"></i><span class="hidden-tablet"> Beranda</span></a></li>
+						<li><a class="ajax-link" href="./?act=partai"><i class="icon-edit"></i><span class="hidden-tablet"> Daftar Partai</span></a></li>
+						<li><a class="ajax-link" href="./?act=caleg"><i class=" icon-briefcase"></i><span class="hidden-tablet"> Daftar CaLeg</span></a></li>
+						<li><a class="ajax-link" href="./?act=desa"><i class=" icon-briefcase"></i><span class="hidden-tablet"> Daftar Desa</span></a></li>
+						<li><a class="ajax-link" href="./?act=member"><i class=" icon-user"></i><span class="hidden-tablet"> Daftar Member</span></a></li>
+						<li><a class="ajax-link" href="./?act=penghitungan_suara"><i class="icon-list-alt"></i><span class="hidden-tablet"> Penghitungan Suara</span></a></li>
+						<li><a class="ajax-link" href="./?act=pesan_masuk"><i class="icon-shopping-cart"></i><span class="hidden-tablet"> Pesan Masuk</span></a></li>
+						<li><a class="ajax-link" href="./?act=pesan_keluar"><i class="icon-retweet"></i><span class="hidden-tablet"> Pesan Keluar</span></a></li>
+						<li><a class="ajax-link" href="./?act=query_sms"><i class="icon-retweet"></i><span class="hidden-tablet"> Query SMS</span></a></li>
+						<li><a class="ajax-link" href="./?act=broadcast"><i class="icon-retweet"></i><span class="hidden-tablet"> SMS Broadcast</span></a></li>
+						<li><a class="ajax-link" href="./?act=pengaturan_sms"><i class="icon-wrench"></i><span class="hidden-tablet"> Pengaturan SMS</span></a></li>
+						<li><a class="ajax-link" href="./?act=pengaturan"><i class="icon-wrench"></i><span class="hidden-tablet"> Pengaturan Lain</span></a></li>
+	
+						
+					</ul>
+				</div><!--/.well -->
+			</div><!--/span-->
+			<!-- left menu ends -->
+			
+			<noscript>
+				<div class="alert alert-block span10">
+					<h4 class="alert-heading">Warning!</h4>
+					<p>You need to have <a href="http://en.wikipedia.org/wiki/JavaScript" target="_blank">JavaScript</a> enabled to use this site.</p>
+				</div>
+			</noscript>
+OBG

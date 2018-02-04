@@ -1,0 +1,60 @@
+#!/bin/bash
+db="/var/www/qc/db/QCdata.db"
+dbtmp="/tmp/sqg.tmp"
+cp $db $dbtmp
+sql="sqlite3 -html $dbtmp"
+sql2="sqlite3 $dbtmp" 
+eval $(echo "$QUERY_STRING" | awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+
+cat <<EOF
+<html>
+<head>
+<script type="text/javascript" src="js/jquery-1.4.js"></script>
+<script type="text/javascript" src="js/jquery.fusioncharts.js"></script>
+<META HTTP-EQUIV="REFRESH" CONTENT="30;URL=./grafik.obg?req=sum">
+
+</head>
+<body>
+	<center>
+$(if [ "$req" == "sum" ];then
+echo "	<h2> HASIL PEMUNGUTAN SUARA SEMENTARA per CALEG</h2><br />
+	<table><tr><td>
+	<table id='grafik' border='1' align='center'>
+	<tr> <th>Nama Caleg</th><th>Total</th></tr>
+	$($sql "select nama_caleg, sum(jumlah) from penghitungan_suara group by nama_caleg order by jumlah desc limit 0,10" | sed 's/_/ /g')
+		</table></td><td colspan='2'>
+<table id='total' border='1' align='center'>
+	<tr><th>Suara Masuk</th><th>Mata Pilih</th></tr>
+	<tr><td>$($sql2 "select sum(jumlah) from penghitungan_suara")</td><td>$($sql2  "select keterangan from pengaturan where nama_pengaturan='JumlahPemilih'")</td></tr>
+	</table></td></tr><table>
+
+	"
+fi)
+<span>
+<script type="text/javascript">
+	\$('#grafik').convertToFusionCharts({
+		swfPath: "swf/",
+		type: "MSColumn3D",
+		data: "#grafik",
+		width:"670",
+		height:"420"		
+	});
+	</script>
+
+	
+
+<script type="text/javascript">
+	\$('#total').convertToFusionCharts({
+		swfPath: "swf/",
+		type: "Pie3D",
+		data: "#total",
+		dataFormat: "HTMLTable",
+		width:"300",
+		height:"300"		
+	});
+	</script></span>
+</center>
+
+</body>
+</html>
+EOF

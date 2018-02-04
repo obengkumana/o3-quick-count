@@ -1,0 +1,192 @@
+#!/bin/bash
+db="/var/www/qc/db/QCdata.db"
+dbtmp="/tmp/sqw.tmp"
+sql="sqlite3 $dbtmp"
+sql2="sqlite3 $db"
+d="/var/www/qc/tmp/sms"
+dir="$d/in"
+dir2="$d/out"
+dir3="$d/done"
+gqs () {
+	if [ "$2" == "1" ];then
+		cat $qsms | grep -i "$1" | sed 's/^.*.|//g; s/_/ /g' | awk '{print $1}'
+	else
+		cat $qsms | grep -i "$1" | sed 's/^.*.|//g; s/_/ /g' | awk '{print $2}'
+	fi
+}
+gps () {
+	cat $psms | grep -i "$1" | sed 's/^.*.|//g; s/_/ /g'	
+}
+
+while true;do	
+	ls $dir > /tmp/ls
+	if [ "x$(cat /tmp/ls)" !=  "x" ];then
+	cp $db $dbtmp
+	$sql "select * from query_sms" > /tmp/qsms
+	$sql "select * from pengaturan_sms" > /tmp/psms	
+	qsms="/tmp/qsms"
+	psms="/tmp/psms"
+	a=(`cat /tmp/ls`)
+	for x in ${a[@]};do
+		
+		nh=(`echo $x | sed 's/\./ /g'`)	
+		name=$($sql "select nama from member where no_telpon='${nh[2]}' and status='anggota'" | sed 's/ /_/g')
+		#CHECK NOMOR
+		if [ "x$name" != "x" ];then
+			#echo $name
+			ISI=(`cat $dir/$x | sed 's/ /_/g; s/\,/ /g'`)
+			# CHECK FORMAT
+			cnT=0
+			for y in ${ISI[@]};do
+				cnT=$[cnT+1]
+				echo "$(echo $y | sed 's/[,.#*_]/ /g' | tr ' ' '\n')" > /tmp/aray
+				case "$(cat /tmp/aray | head -1 | tr 'a-z' 'A-Z')" in
+					TOTAL)
+						wcount=$(cat /tmp/aray | wc -w)				
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs partai 1)[0-9]\|$(gqs partai 2)[0-9]" > /tmp/partai
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs caleg 1)[0-9]\|$(gqs caleg 2)[0-9]" > /tmp/caleg
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs tps 1)[0-9]\|$(gqs tps 2)[0-9]" > /tmp/tps
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs desa 1)[0-9]\|$(gqs desa  2)[0-9]" > /tmp/desa
+						_P=$(cat /tmp/partai | tr "A-Z" " " | sed 's/ //g');_T=$(cat /tmp/tps | tr "A-Z" " " | sed 's/ //g');_D=$(cat /tmp/desa | tr "A-Z" " " | sed 's/ //g');_T=$(cat /tmp/tps | tr "A-Z" " " | sed 's/ //g');_C=$(cat /tmp/caleg | tr "A-Z" " " | sed 's/ //g')
+						if [ "$wcount" == "2" ] && [ "x$_P" != "x" ];then
+							namaP=$($sql "select nama_partai from partai where kode_partai='$(gqs partai 1)$_P'" | sed 's/ /_/g')
+							if [ "x$namaP" != "x" ];then
+								result=$($sql "select sum(jumlah) from penghitungan_suara where nama_partai='$namaP'")								
+								echo -e "$(gps SMS_check_total)\nPartai = $namaP\nTotal = $result" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							else
+								echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							fi	
+						
+						elif [ "$wcount" == "3" ] && [ "x$_P" != "x" ] && [ "x$_C" != "x" ];then
+							namaP=$($sql "select nama_partai from partai where kode_partai='$(gqs partai 1)$_P'" | sed 's/ /_/g')
+							namaC=$($sql "select nama_caleg from caleg where nomor_urut_partai='$(gqs partai 1)$_P' and nomor_urut_caleg='$_C'" | sed 's/ /_/g')
+							if [ "x$namaP" != "x" ] && [ "x$namaC" != "x" ];then
+								result=$($sql "select sum(jumlah) from penghitungan_suara where nama_partai='$namaP' and nama_caleg='$namaC'")								
+								echo -e "$(gps SMS_check_total)\nPartai = $namaP\nCaleg = $namaC\nTotal = $result" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							else
+								echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							fi
+							
+						elif [ "$wcount" == "4" ] && [ "x$_P" != "x" ] && [ "x$_C" != "x" ] && [ "x$_D" != "x" ];then
+							namaP=$($sql "select nama_partai from partai where kode_partai='$(gqs partai 1)$_P'" | sed 's/ /_/g')
+							namaC=$($sql "select nama_caleg from caleg where nomor_urut_partai='$(gqs partai 1)$_P' and nomor_urut_caleg='$_C'" | sed 's/ /_/g')
+							namaD=$($sql "select nama_desa from desa where kode_desa='$(gqs desa 1)$_D'" | sed 's/ /_/g')
+							if [ "x$namaP" != "x" ] && [ "x$namaC" != "x" ] && [ "x$namaD" != "x" ];then
+								result=$($sql "select sum(jumlah) from penghitungan_suara where nama_partai='$namaP' and nama_caleg='$namaC' and desa='$namaD'")								
+								echo -e "$(gps SMS_check_total)\nPartai = $namaP\nCaleg = $namaC\nDesa = $namaD\nTotal = $result" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							else
+								echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							fi
+						elif [ "$wcount" == "5" ] && [ "x$_P" != "x" ] && [ "x$_C" != "x" ] && [ "x$_D" != "x" ] && [ "x$_T" != "x" ];then
+							namaP=$($sql "select nama_partai from partai where kode_partai='$(gqs partai 1)$_P'" | sed 's/ /_/g')
+							namaC=$($sql "select nama_caleg from caleg where nomor_urut_partai='$(gqs partai 1)$_P' and nomor_urut_caleg='$_C'" | sed 's/ /_/g')
+							namaD=$($sql "select nama_desa from desa where kode_desa='$(gqs desa 1)$_D'" | sed 's/ /_/g')
+							if [ "x$namaP" != "x" ] && [ "x$namaC" != "x" ] && [ "x$namaD" != "x" ];then
+								result=$($sql "select sum(jumlah) from penghitungan_suara where nama_partai='$namaP' and nama_caleg='$namaC' and desa='$namaD' and tps='$_T'")								
+								echo -e "$(gps SMS_check_total)\nPartai = $namaP\nCaleg = $namaC\nDesa = $namaD\nTPS = $_T\nTotal = $result" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							else
+								echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+							fi
+						else
+							# CHECK TOTAL , FORMAT SALAH 
+							echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+						fi
+					;;
+					*)
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs partai 1)[0-9]\|$(gqs partai 2)[0-9]" > /tmp/partai
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs caleg 1)[0-9]\|$(gqs caleg 2)[0-9]" > /tmp/caleg
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs tps 1)[0-9]\|$(gqs tps 2)[0-9]" > /tmp/tps
+						cat /tmp/aray | tr 'a-z' 'A-Z' | grep -i "$(gqs desa 1)[0-9]\|$(gqs desa  2)[0-9]" > /tmp/desa
+						cat /tmp/aray | tail -1 > /tmp/hasil
+						_P=$(cat /tmp/partai | tr "A-Z" " " | sed 's/ //g');_T=$(cat /tmp/tps | tr "A-Z" " " | sed 's/ //g');_D=$(cat /tmp/desa | tr "A-Z" " " | sed 's/ //g');_T=$(cat /tmp/tps | tr "A-Z" " " | sed 's/ //g');_C=$(cat /tmp/caleg | tr "A-Z" " " | sed 's/ //g');_H=$(cat /tmp/hasil)
+						if [ "x$_P" != "x" ] && [ "x$_T" != "x" ] && [ "x$_D" != "x" ] && [ "x$_C" != "x" ] && [ "x$_H" != "x" ];then
+							namaP=$($sql "select nama_partai from partai where kode_partai='$(gqs partai 1)$_P'" | sed 's/ /_/g')
+							namaC=$($sql "select nama_caleg from caleg where nomor_urut_partai='$(gqs partai 1)$_P' and nomor_urut_caleg='$_C'" | sed 's/ /_/g')
+							namaD=$($sql "select nama_desa from desa where kode_desa='$(gqs desa 1)$_D'" | sed 's/ /_/g')					
+							$sql2 "select rowid from penghitungan_suara where nama_partai='$namaP' and nama_caleg='$namaC' and desa='$namaD' AND tps='$_T'" > /tmp/rowC
+							if [ "$?" -eq "0" ];then
+								[ "x$namaC" == "x" ] && namaC="$_C"
+								[ "x$namaD" == "x" ] && namaD="$_D"
+								if [ "x$(cat /tmp/rowC)" == "x" ];then
+									rest=1;test=50
+									while [ $rest == "1" ];do
+    										$sql2 "insert into penghitungan_suara values ('$namaP','$namaC','$namaD','$_T','$_H','${nh[0]} ${nh[1]}','$name - ${nh[2]}')"
+    										if [ "$?" -eq "0" ];then
+        										rest=3;test=1
+											echo -e "$(gps SMS_sukses_input)\nPartai : $namaP\nCaleg : $namaC\nDesa : $namaD\nTPS : $_T\nJmlh : $_H" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+    										else
+        										rest=1;test=$[test-1]
+        										[ "$test" -lt "0" ] && rest=0; echo "Benar gagal"         	
+    										fi
+									done
+								else
+									rest=1;test=50
+									while [ $rest == "1" ];do
+										$sql2 "update penghitungan_suara set jumlah='$_H', pembaharuan_terakhir='${nh[0]} ${nh[1]}', sender='$name - ${nh[2]}' where nama_partai='$namaP' and nama_caleg='$namaC' and desa='$namaD' AND tps='$_T'"
+    										if [ "$?" -eq "0" ];then
+        										rest=3;test=1
+											echo -e "$(gps SMS_sukses_update)\nPartai : $namaP\nCaleg : $namaC\nDesa : $namaD\nTPS : $_T\nJmlh : $_H" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+    										else
+        										rest=1;test=$[test-1]
+        										[ "$test" -lt "0" ] && rest=0; echo "Benar gagal update"         	
+    										fi
+									done
+								fi
+							fi					
+						else
+							# FORMAT SALAH
+							echo -e "$(gps SMS_format_salah)" | sed 's/NAMA/'$name'/; s/_/ /g' | cut -c1-159 > $dir2/${nh[0]}.${nh[1]}.${nh[2]}.$cnT
+						fi
+					;;
+				esac
+			done
+			rest=1;test=50
+			while [ $rest == "1" ];do
+				$sql2 "insert into pesan_masuk values ('${nh[0]}','${nh[1]}','${nh[2]}','$(cat $dir/$x)')"
+				if [ "$?" -eq "0" ];then
+        				rest=3;test=1
+					rm -f $dir/$x
+				else
+        				rest=1;test=$[test-1]
+        				[ "$test" -lt "0" ] && rest=0         
+    				fi
+			done						
+		else
+			# Tidak tedaftar
+			rest=1;test=50
+			while [ $rest == "1" ];do
+				$sql2 "insert into pesan_masuk values ('${nh[0]}','${nh[1]}','${nh[2]}','$(cat $dir/$x)')"
+				if [ "$?" -eq "0" ];then
+        				rest=3;test=1
+					rm -f $dir/$x
+				else
+        				rest=1;test=$[test-1]
+        				[ "$test" -lt "0" ] && rest=0         
+    				fi
+			done			
+		fi
+		#sleep 1
+	done
+	else
+		sleep 1
+	fi
+	# INPUT DATA OUTBOX 
+	ls $dir3 > /tmp/ls
+	if [ "x$(cat /tmp/ls)" !=  "x" ];then
+		ac=(`cat /tmp/ls`)
+		for x in ${ac[@]};do
+			nh=(`echo $x | sed 's/\./ /g'`)
+			rest=1;test=50
+			while [ $rest == "1" ];do			
+				$sql2 "insert into pesan_keluar values ('${nh[0]}','${nh[1]}','${nh[2]}','$(cat $dir3/$x | tr '\n' ' ')')"
+				if [ "$?" -eq "0" ];then
+        				rest=3;test=1
+					rm -f $dir3/$x
+				else
+        				rest=1;test=$[test-1]
+        				[ "$test" -lt "0" ] && rest=0         
+    				fi
+			done
+		done		
+	fi
+done

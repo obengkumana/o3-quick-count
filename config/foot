@@ -1,0 +1,72 @@
+cat <<OBG
+<footer>
+			<br />
+			<br />
+			<p class="pull-left">&copy; <a href="http://obengkumana.com" target="_blank">Dragon Obeng</a> 2014</p>
+		</footer>
+		
+	</div>
+	
+	<script src="js/jquery-ui-1.8.21.custom.min.js"></script>
+	<script src="js/bootstrap-transition.js"></script>
+	<script src="js/bootstrap-alert.js"></script>
+	<script src="js/bootstrap-modal.js"></script>
+	<script src="js/bootstrap-dropdown.js"></script>
+	<script src="js/bootstrap-scrollspy.js"></script>
+	<script src="js/bootstrap-tab.js"></script>
+	<script src="js/bootstrap-tooltip.js"></script>
+	<script src="js/bootstrap-popover.js"></script>
+	<script src="js/bootstrap-button.js"></script>
+	<script src="js/bootstrap-collapse.js"></script>
+	<script src="js/bootstrap-carousel.js"></script>
+	<script src="js/bootstrap-typeahead.js"></script>
+	<script src="js/bootstrap-tour.js"></script>
+	<script src="js/jquery.cookie.js"></script>
+	<script src='js/fullcalendar.min.js'></script>
+	<script src="js/excanvas.js"></script>
+	<script src="js/jquery.flot.min.js"></script>
+	<script src="js/jquery.flot.pie.min.js"></script>
+	<script src="js/jquery.flot.stack.js"></script>
+	<script src="js/jquery.flot.resize.min.js"></script>
+	<script src="js/jquery.chosen.min.js"></script>
+	<script src="js/jquery.uniform.min.js"></script>
+	<script src="js/jquery.colorbox.min.js"></script>
+	<script src="js/jquery.cleditor.min.js"></script>
+	<script src="js/jquery.noty.js"></script>
+	<script src="js/jquery.elfinder.min.js"></script>
+	<script src="js/jquery.raty.min.js"></script>
+	<script src="js/jquery.iphone.toggle.js"></script>
+	<script src="js/jquery.autogrow-textarea.js"></script>
+	<script src="js/jquery.uploadify-3.1.min.js"></script>
+	<script src="js/jquery.history.js"></script>
+	<script src="js/jquery.dataTables.js"></script>	
+	<script src="js/jquery.dataTables.editable.js"></script>
+	<script src="js/jquery.validate.js"></script>
+	<script src="js/jquery.jeditable.js"></script>
+	<script src="js/popup.js"></script>
+	<script src="./jsreq.obg?req=main&p=$act"></script>
+	<script type='text/javascript'>
+<!--
+function startTime() {
+    var today=new Date(),
+        curr_hour=today.getHours(),
+        curr_min=today.getMinutes(),
+        curr_sec=today.getSeconds();
+ curr_hour=checkTime(curr_hour);
+    curr_min=checkTime(curr_min);
+    curr_sec=checkTime(curr_sec);
+    document.getElementById('clock').innerHTML=curr_hour+':'+curr_min+':'+curr_sec;
+}
+function checkTime(i) {
+    if (i<10) {
+        i='0' + i;
+    }
+    return i;
+}
+setInterval(startTime, 500);
+//-->
+</script>
+		
+</body>
+</html>
+OBG

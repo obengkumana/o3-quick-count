@@ -1,0 +1,66 @@
+a=$1
+nscript="/www/pos/des"
+t1 () {
+case $1 in
+	1)
+		echo "Satu"
+	;;
+	2)
+		echo "Dua"
+	;;
+	3)
+		echo "Tiga"
+	;;
+	4)
+		echo "Empat"
+	;;
+	5)
+		echo "Lima"
+	;;
+	6)
+		echo "Enam"
+	;;
+	7)
+		echo "Tujuh"
+	;;
+	8)
+		echo "Delapan"
+	;;
+	9)
+		echo "Sembilan"
+	;;
+	10)
+		echo "Sepuluh"	
+	;;
+	11)
+		echo "Sebelas"
+	;;
+	*)
+		echo ""
+	;;
+esac
+}
+if [ "$a" -lt "12" ];then
+	echo "$(t1 $a)"
+elif [ "$a" -lt "20" ];then
+	echo "$(t1 $[a-10]) Belas "
+elif [ "$a" -lt "100" ];then
+	echo "$(t1 $[a/10]) Puluh $($nscript $[a%10])"
+elif [ "$a" -lt "200" ];then
+	echo "Seratus $($nscript $[a-100])"
+elif [ "$a" -lt "1000" ];then
+	echo "$($nscript $[a/100]) Ratus $($nscript $[a%100])"
+elif [ "$a" -lt "2000" ];then
+	echo "Seribu $($nscript $[a-1000])"
+elif [ "$a" -lt "1000000" ];then
+	echo "$($nscript $[a/1000]) Ribu $($nscript $[a%1000])"
+elif [ "$a" -lt "1000000000" ];then
+	echo "$($nscript $[a/1000000]) Juta $($nscript $[a%1000000])"
+elif [ "$a" -lt "1000000000000" ];then
+	echo "$($nscript $[a/1000000000]) Miliar $($nscript $[a%1000000000])"	
+elif [ "$a" -lt "1000000000000000" ];then
+	echo "$($nscript $[a/1000000000000]) Triliun $($nscript $[a%1000000000000])"			
+else
+	echo "NO"
+fi
+	

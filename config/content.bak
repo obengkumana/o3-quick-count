@@ -1,0 +1,10 @@
+if [ "$1" != "" ];then
+case "$1" in
+	satuan)
+		echo "satuan"
+	;;
+	*)
+		echo "menu $1 belum tersedia"
+	;;
+esac
+fi

@@ -1,0 +1,55 @@
+_search () {
+cat <<EOF
+	<table>
+						<tr>
+						<td>	
+							<input placeholder="Cari ... " class="span7 search-query" name="gfilter2" id="gfilter" type="text">
+						</td>
+						$(if [ "$_pg" == "penjualan" ];then
+						echo "<td> 
+							<label for="date02" class="control-label">Tampilkan mulai :</label>
+						</td>
+						<td>
+							<input type="text" class="span7 datepicker" id="date01" value="$(date +%d/%m/%Y)">
+							
+						</td>
+						<td>
+							<label for="date02" class="control-label">S/D :</label>
+						</td>
+						<td>
+							<input type="text" class="span7 datepicker" id="date02" value="$(date +%d/%m/%Y)">
+							
+						</td>"
+						fi)
+						
+						</tr>
+					</table>
+EOF
+}
+
+cat <<EOF
+<div id="content" class="span10">
+			<div>
+				<ul class="breadcrumb">
+					<li>
+						<a href="./">BERANDA</a> <span class="divider"></span>
+					</li>
+					$(if [ "$1" != "" ] && [ "$1" != "login" ];then
+						echo " 
+						<li>
+							<a href=\"./?act=$1\"> $(echo "> $1" |tr "a-z" "A-Z" | sed 's/_/ /g')</a>
+						</li>
+						"
+					fi)
+				</ul>
+				
+			</div>
+			$(if [ "$1" == "" ] || [ "$1" == "login" ] || [ "$1" == "logout" ];then
+			echo " 
+			<iframe src='./grafik.obg?req=sum' name='obengkumana' frameborder='0' height='500' width='100%'></iframe>				"
+			fi)
+
+<iframe src='./page.obg?m=$1' name='obengkumana' frameborder='0' height='500' width='100%'></iframe>					
+
+</div>			
+EOF

@@ -1,0 +1,4 @@
+[global]
+model = AT
+port = /dev/ttyUSB55
+connection = serial

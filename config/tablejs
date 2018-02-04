@@ -1,0 +1,211 @@
+. ./config/function
+cat <<EOF
+		<script type="text/javascript" charset="utf-8">
+		//function fnFilterGlobal ()
+		//{
+	 	 //  \$('.datatable').dataTable().fnFilter(
+        	//\$(\"#gfilter\").val(),
+       	// null        
+    		//);
+		//}
+
+			\$(document).ready( function () {
+				var oTable = \$('#example').dataTable({
+						'sScrollY': '350px',					  	
+					   'bServerSide': true,
+					   'bProcessing': true,
+					   'aaSorting': [[ 4, "asc" ]],
+                                      //"bServerSide": true,
+					   //'sDom': 'frtiS',
+					   // 'sDom': '<"H"Tfr>t<"F"ip>',					 
+					   "bDeferRender": true,
+					
+					 "sAjaxSource": "data.obg?p=$m",
+					//'fnRowCallback': function( nRow, aData, iDisplayIndex ) {
+					//	/* Append the grade to the default row class name */
+					//	if ( aData[8] == "none" )
+					//	{
+					//		\$('td', nRow).css('background-color', 'gold');
+					//	}
+					//	else
+					//	{
+					//		\$('td', nRow).css('background-color', 'greenyellow');
+					//	}						
+					//},
+						$(case "$m" in
+							partai)
+								echo "5%  5% 30% 60%" > /tmp/cb									   
+								col_width_ajax 4						
+							;;
+							caleg)
+								echo "5% 15% 15% 30%" > /tmp/cb									   
+								col_width_ajax 4
+							;;
+							desa)
+								echo "5% 15% 50%" > /tmp/cb									   
+								col_width_ajax 3
+							;;
+							member)
+								echo "5% 7% 10% 5% 21% 5% 5% 5% " > /tmp/cb									   
+								col_width_ajax 8 								
+							;;
+							penghitungan_suara)
+								echo "5% 7% 10% 10% 5% 14% 14% 6%" > /tmp/cb									   
+								col_width_ajax 8 								
+							;;
+							pesan_masuk|pesan_keluar)
+								echo "5% 10% 10% 15% 60%" > /tmp/cb									   
+								col_width_ajax 5 								
+							;;							
+							query_sms|broadcast|pengaturan|pengaturan_sms)
+								echo "5% 20% 75%" > /tmp/cb									   
+								col_width_ajax 3 								
+							;;
+							
+							pengaturan)
+								echo "5% 10% 85%" > /tmp/cb									   
+								col_width_ajax 3 								
+							;;
+						esac),
+							"fnServerData": function ( sSource, aoData, fnCallback, oSettings ) {
+      						oSettings.jqXHR = \$.ajax( {
+       					 "dataType": 'json',
+        					"type": "GET",
+        					"url": sSource,
+        					"data": aoData,
+        					"success": fnCallback
+      					} );					
+					}
+
+}).makeEditable({
+									
+                    			sUpdateURL: "update.obg?p=$m&req=update",
+					sDeleteURL: "update.obg?p=$m&req=dell",
+					sDeleteHttpMethod: "GET",
+					sAddURL: "update.obg?p=$m&req=add",
+					
+					//sAddNewRowFormId: "formAddNewRow2",
+                    			//sAddNewRowButtonId: "btnAddNewRow2",
+                    			//sAddNewRowOkButtonId: "btnAddNewRowOk2",
+                    			//sAddNewRowCancelButtonId: "btnAddNewRowCancel2",
+                    			//sDeleteRowButtonId: "btnDeleteRow2", 
+                    			"aoColumns": [
+                    					{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'Klik 2x untuk memilih ...',
+                                                 	loadtext: 'loading...',
+                           				       type: 'select',
+                               				onblur: 'cancel',
+								submit: 'Ok',
+                                                 	data: "{'Hapus':'Hapus','Hapus':'Hapus'}",
+
+							},
+                    					{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+                    					{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+                    					{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+							{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+								onblur     : 'submit',
+                                                  	//submit:'Simpan',
+								loadtype: 'GET',
+								style  : 'inherit',
+								
+							},
+                    					{
+								indicator: 'Menyimpan Perubahan ....',
+                                                  	tooltip: 'klik 2 x merubah ...',
+                             	                    	type: 'textarea',
+                                                  	//submit:'Simpan',
+								onblur     : 'submit',
+								loadtype: 'GET',
+								
+							}
+							]									
+
+										});
+						\$(window).bind('resize', function () {
+    						oTable.fnAdjustColumnSizing();
+  						} );
+				
+			} );
+		</script>
+EOF

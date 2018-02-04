@@ -1,0 +1,46 @@
+sql="sqlite3 /www/config/db/POScell.db"
+sql2="sqlite3 -html /www/config/db/POScell.db"
+cat <<EOF
+<div data-snap-ignore="true">
+
+<div class="row-fluid ">
+	<br />
+			<button id="btnDeleteRow">Hapus Data</button>
+			
+				$( if [ "$1" == "supplier" ] || [ "$1" == "nama_produk" ] || [ "$1" == "customer" ];then
+				echo "<div class=\"span7\">"
+				fi)
+				<div id="demots">
+				<table class="table table-bordered table-striped table-condensed bootstrap-datatable datatable" id="demo-table" style="table-layout: fixed"  >
+
+						  <thead>
+							  <tr>
+								  $(
+								colname=(`$sql "PRAGMA table_info($1)" | sed 's/ /_/g; s/|/ /g' | awk '{print $2}' | tr '[a-z]' '[A-Z]'`)
+								echo "<th>No.</th>"
+								for x in "${colname[@]}"
+								do
+									echo "<th>$x</th>" | sed 's/_/ /g'
+								done)
+
+							  </tr>
+						  </thead>   
+						  <tbody>
+							
+							$($sql2 "select rowid, * from $m")							
+							
+						  </tbody>
+					  </table></div>$( if [ "$1" == "supplier" ] || [ "$1" == "nama_produk" ] || [ "$1" == "customer" ];then 
+						echo "</div>"
+						fi)
+					</div>
+				</div><!--/span-->
+					<form id="formAddNewRow2" action="#" title="Add New Gecko Browser">
+          <button id="btnAddNewRowCancel2" value="cancel">Cancel</button>
+          <button id="btnAddNewRowOk2" value="Ok">Add Gecko Browser</button>
+ 
+          <!-- INPUT elements of the form -->
+
+      </form>  
+			
+EOF

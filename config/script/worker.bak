@@ -1,0 +1,39 @@
+#!/bin/bash
+db="/var/www/qc/db/QCdata.db"
+dbtmp="/tmp/sqw.tmp"
+sql="sqlite3 $dbtmp"
+dir=/var/www/qc/tmp/sms/in
+gqs () {
+	if [ "$2" == "1" ];then
+		grep -i "$1" | sed 's/^.*.|//g; s/_/ /g' | awk '{print $1}'
+	else
+		grep -i "$1" | sed 's/^.*.|//g; s/_/ /g' | awk '{print $2}'
+	fi
+}
+while true;do
+	cp $ddb $dbtmp	
+	qsms=$($sql "select * from query_sms)
+	a=(`ls $dir`)
+	for x in ${a[@]};do
+		nh=$(echo $x | awk -F '.' '{print $NF}')		
+		name=$($sql "select nama from member where no_telpon='$nh'")
+		if [ "x$name" != "x" ];then
+			echo $name
+			ISI=(`cat $dir/$x | sed 's/ /_/g; s/\,/ /g'`)
+			for y in ${ISI[@]};do
+				z=$(echo $y | sed 's/[,.#*_]/ /g' | tr ' ' '\n')
+				#gqs partai 2
+				#gqs tps 1
+				#echo $z | grep -i "p[0-9]" > /tmp/partai
+				#echo $z | grep -i "c[0-9]" > /tmp/caleg
+				#echo $z | grep -i "t[0-9]" > /tmp/tps
+				echo test
+			done
+						
+		else
+			echo noreg
+		fi
+		sleep 1
+	done
+	#sleep 1
+done
